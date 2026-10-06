@@ -1,0 +1,23 @@
+.field-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.field-list{display:grid;gap:12px}
+.field-card{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.field-card h2{font:700 16px Manrope,sans-serif;margin:0;color:#2c4733}
+.field-card p{font-size:11px;color:#758078;margin:6px 0}
+.field-card-copy>span{font-size:10px;color:#929a93}
+.field-card-actions{display:flex;gap:12px;align-items:center}
+.field-form,.field-detail{padding:22px}
+.field-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.field-form-grid label,.field-select,.history-filter{display:grid;gap:7px;color:#344339;font-size:11px;font-weight:600}
+.field-form-grid input,.field-form-grid select,.field-form-grid textarea,.field-select select,.history-filter select{width:100%;min-height:42px;border:1px solid #dfe6df;border-radius:6px;background:#fff;padding:9px 11px;color:#344339;outline-color:#6a936d}
+.field-form-grid textarea{resize:vertical}
+.field-notes{grid-column:1/-1}
+.field-form .button-row,.field-detail .button-row{justify-content:flex-end}
+.field-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:18px}
+.field-detail-grid .detail{min-width:0}
+.field-detail-grid .detail b{overflow-wrap:anywhere}
+.archive-button{color:#9a5347}
+.history-filter{min-width:180px;align-self:center}
+.field-select{margin:0 0 16px}
+.row-field{font-size:9px;color:#426048;background:#eff5ef;border-radius:10px;padding:4px 7px;white-space:nowrap}
+@media(max-width:950px){.field-form-grid{gap:12px}.field-card{padding:16px}}
+@media(max-width:680px){.field-page-heading{align-items:flex-start;flex-direction:column}.field-page-heading .primary{width:100%}.field-form-grid,.field-detail-grid{grid-template-columns:1fr}.field-notes{grid-column:auto}.field-card{align-items:flex-start;flex-direction:column;gap:12px}.field-card-actions{width:100%;justify-content:flex-end}.field-form,.field-detail{padding:15px}.field-detail .button-row{justify-content:flex-start;flex-wrap:wrap}.history-filter{min-width:145px}}
