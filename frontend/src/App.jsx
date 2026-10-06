@@ -102,7 +102,10 @@ export default function App() {
   async function downloadReport(id) {
     try {
       const response = await request(`/api/report/${id}`, token)
-      const blob = await response.blob(); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `crop-assessment-${id}.pdf`; link.click(); URL.revokeObjectURL(url)
+      if (!response.headers.get('content-type')?.toLowerCase().startsWith('application/pdf')) throw new Error('The server did not return a PDF report. Please try again.')
+      const blob = await response.blob()
+      if (!blob.size) throw new Error('The PDF report is empty. Please try again.')
+      const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `crop-assessment-${id}.pdf`; document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 60000)
     } catch (e) { setError(e.message) }
   }
   function logout() { localStorage.removeItem('crop_token'); localStorage.removeItem('crop_user'); setToken(''); setUser(null); setAnalyses([]); setFields([]); setPage('dashboard') }

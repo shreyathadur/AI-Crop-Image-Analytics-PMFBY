@@ -9,12 +9,23 @@ export default function GradCamPanel({ analysisId, token, originalImage }) {
   useEffect(() => () => { if (images) URL.revokeObjectURL(images) }, [images])
   async function explain() {
     setLoading(true); setError('')
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 180000)
     try {
-      const response = await fetch(`${API}/api/analyses/${analysisId}/gradcam`, {headers:{Authorization:`Bearer ${token}`}})
-      if (!response.ok) throw new Error()
-      setImages(URL.createObjectURL(await response.blob()))
-    } catch { setError('AI model explanation is currently unavailable.') }
-    finally { setLoading(false) }
+      const response = await fetch(`${API}/api/analyses/${analysisId}/gradcam`, {headers:{Authorization:`Bearer ${token}`}, signal:controller.signal})
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('The uploaded image is no longer available. Run a new analysis to generate a visualization.')
+        throw new Error(`AI model explanation is unavailable (HTTP ${response.status}).`)
+      }
+      if (!response.headers.get('content-type')?.toLowerCase().startsWith('image/')) {
+        throw new Error('The server returned an invalid visualization response. Please try again.')
+      }
+      const blob = await response.blob()
+      if (!blob.size) throw new Error('The server returned an empty visualization. Please try again.')
+      setImages(URL.createObjectURL(blob))
+    } catch (error) {
+      setError(error.name === 'AbortError' ? 'Grad-CAM timed out. Please try again; the service may be starting up.' : error.message || 'AI model explanation is currently unavailable.')
+    } finally { window.clearTimeout(timeout); setLoading(false) }
   }
   return <section className="panel gradcam-panel">
     <div className="panel-head"><div><p className="eyebrow">AI MODEL EXPLANATION</p><h3>Grad-CAM Visualization</h3></div></div>
