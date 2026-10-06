@@ -7,6 +7,12 @@ ENV_FILE = ROOT / ".env"
 load_dotenv(ENV_FILE)
 
 
+def _default_upload_dir(app_env):
+    if app_env == "production":
+        return Path("/tmp/crop_analytics_uploads")
+    return ROOT / "uploads"
+
+
 def _load_secret_key():
     # load_dotenv preserves existing process variables, including an empty one.
     # Fall back to the file only when that process value is unset or blank.
@@ -21,7 +27,7 @@ SECRET_KEY = _load_secret_key()
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{ROOT / 'crop_analytics.db'}")
 MONGODB_URI = os.getenv("MONGODB_URI", "").strip()
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "crop_analytics")
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(ROOT / "uploads"))).resolve()
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(_default_upload_dir(APP_ENV)))).resolve()
 MODEL_PATH = Path(os.getenv("MODEL_PATH", str(ROOT / "ml" / "models" / "crop_disease.keras"))).resolve()
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")

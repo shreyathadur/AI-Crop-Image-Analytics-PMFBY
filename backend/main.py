@@ -58,9 +58,6 @@ def _validate_production_configuration():
     frontend = urlsplit(FRONTEND_ORIGIN)
     if frontend.scheme != "https" or not frontend.netloc or frontend.path not in {"", "/"} or frontend.query or frontend.fragment:
         raise RuntimeError("Production requires FRONTEND_ORIGIN to be the HTTPS origin of the deployed frontend")
-    upload_setting = os.getenv("UPLOAD_DIR", "").strip()
-    if not upload_setting or not (upload_setting.startswith("/") or re.match(r"^[A-Za-z]:[\\/]", upload_setting)):
-        raise RuntimeError("Production requires UPLOAD_DIR to point to persistent absolute storage")
     if not MONGODB_URI:
         database_setting = os.getenv("DATABASE_URL", "").strip()
         if not database_setting.startswith("sqlite:///"):

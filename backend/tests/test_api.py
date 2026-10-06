@@ -2,6 +2,7 @@ import io
 import hashlib
 import sqlite3
 import json
+from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from unittest.mock import MagicMock
 from datetime import datetime, timezone
@@ -48,6 +49,27 @@ def test_health(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_startup_creates_nested_upload_directory(tmp_path, monkeypatch):
+    from backend.main import lifespan
+    upload_dir = tmp_path / "nested" / "crop_analytics_uploads"
+    monkeypatch.setattr("backend.main.APP_ENV", "test")
+    monkeypatch.setattr("backend.main.UPLOAD_DIR", upload_dir)
+    monkeypatch.setattr(database, "initialize", lambda: None)
+
+    async def run_lifespan():
+        async with lifespan(app):
+            assert upload_dir.is_dir()
+
+    import asyncio
+    asyncio.run(run_lifespan())
+
+
+def test_production_upload_default_uses_render_free_tmp_path():
+    from backend.config import _default_upload_dir, ROOT
+    assert _default_upload_dir("production") == Path("/tmp/crop_analytics_uploads")
+    assert _default_upload_dir("development") == ROOT / "uploads"
 
 
 def test_gradcam_service_generates_finite_png_for_saved_rust_image():
@@ -156,6 +178,14 @@ def test_pdf_still_renders_when_gradcam_fails(monkeypatch, tmp_path):
         gradcam_service.GradCAMConsistencyError("inconsistent explanation")))
     pdf = make_pdf({"id": "pdf-test", "image_path": str(image_path), "image_name": "crop.png", "confidence": .8,
                     "prediction": "Corn (maize) — Common rust", "crop": "Corn", "health_status": "Affected"})
+    assert pdf.startswith(b"%PDF")
+
+
+def test_pdf_still_renders_when_uploaded_image_is_missing(tmp_path):
+    pdf = make_pdf({"id": "pdf-missing-image", "image_path": str(tmp_path / "lost-upload.jpg"),
+                    "image_name": "crop.jpg", "confidence": .8,
+                    "prediction": "Corn (maize) â€” Common rust", "crop": "Corn",
+                    "health_status": "Affected"})
     assert pdf.startswith(b"%PDF")
 
 
@@ -285,20 +315,15 @@ def test_production_requires_strong_secret_and_https_frontend_origin(monkeypatch
         _validate_production_configuration()
     monkeypatch.setattr("backend.main.FRONTEND_ORIGIN", "https://crop-ui.example")
     monkeypatch.setattr("backend.main.MONGODB_URI", "mongodb://db.example/crop")
-    monkeypatch.setenv("UPLOAD_DIR", "/var/data/uploads")
     _validate_production_configuration()
 
 
-def test_production_rejects_ephemeral_default_database_and_uploads(monkeypatch):
+def test_production_rejects_ephemeral_default_database_without_mongodb(monkeypatch):
     monkeypatch.setattr("backend.main.APP_ENV", "production")
     monkeypatch.setattr("backend.main.SECRET_KEY", "x" * 40)
     monkeypatch.setattr("backend.main.FRONTEND_ORIGIN", "https://crop-ui.example")
     monkeypatch.setattr("backend.main.MONGODB_URI", "")
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("UPLOAD_DIR", raising=False)
-    with pytest.raises(RuntimeError, match="UPLOAD_DIR"):
-        _validate_production_configuration()
-    monkeypatch.setenv("UPLOAD_DIR", "/var/data/uploads")
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./crop_analytics.db")
     with pytest.raises(RuntimeError, match="absolute persistent path"):
         _validate_production_configuration()

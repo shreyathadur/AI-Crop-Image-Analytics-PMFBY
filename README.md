@@ -152,10 +152,10 @@ SECRET_KEY=<at least 32 random characters>
 FRONTEND_ORIGIN=https://<your-frontend-name>.onrender.com
 MONGODB_URI=<your MongoDB connection URI>
 MONGODB_DATABASE=crop_analytics
-UPLOAD_DIR=/var/data/uploads
+UPLOAD_DIR=/tmp/crop_analytics_uploads
 ```
 
-Attach a persistent disk mounted at `/var/data`; uploaded source images are needed later for Grad-CAM and PDF reports. Render's service filesystem is otherwise ephemeral. MongoDB is the recommended production database. If choosing SQLite instead, set `DATABASE_URL=sqlite:////var/data/crop_analytics.db` so it resides on the same persistent disk. A disk-backed service is single-instance and does not support horizontal scaling; multiple instances need shared database and object storage, which this project does not currently implement.
+This Render Free configuration uses the ephemeral filesystem and does not use a persistent disk. When `APP_ENV=production` and `UPLOAD_DIR` is unset, the backend defaults to `/tmp/crop_analytics_uploads` and creates it at startup. MongoDB Atlas stores account, analysis, field, and history records persistently. Uploaded crop images live on the Render filesystem and may disappear after a restart or redeploy; Grad-CAM then returns an unavailable/not-found response for those images, while the saved analysis history remains available. PDF reports are generated on demand in memory and are not stored as files; after an image is lost, a report can still be generated from the saved analysis but will omit the image and Grad-CAM visualization. This setup is suitable for a controlled college/demo deployment, not permanent production file storage. Keep `MONGODB_URI` configured to use Atlas for the persistent database.
 
 The saved model and label config are included in the source checkout and do not require training data at runtime. For the frontend, create a Render Static Site rooted at `frontend`:
 
